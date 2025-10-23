@@ -6,10 +6,17 @@ import (
 	"github.com/genshinsim/gcsim/pkg/core/combat"
 	"github.com/genshinsim/gcsim/pkg/core/event"
 	"github.com/genshinsim/gcsim/pkg/core/info"
+	"github.com/genshinsim/gcsim/pkg/core/player/character"
 	"github.com/genshinsim/gcsim/pkg/enemy"
+	"github.com/genshinsim/gcsim/pkg/modifier"
 )
 
-const a4IcdKey = "fischl-a4-icd"
+const (
+	a4IcdKey            = "fischl-a4-icd"
+	witchcraftAtkKey    = "fischl-witchcraft-atk%"
+	witchcraftEmKey     = "fischl-witchcraft-em"
+	witchcraftBonusCKey = "fischl-witch-c6bonus"
+)
 
 // A1 is not implemented:
 // TODO: When Fischl hits Oz with a fully-charged Aimed Shot, Oz brings down Thundering Retribution, dealing AoE Electro DMG equal to 152.7% of the arrow's DMG.
@@ -76,4 +83,83 @@ func (c *char) a4() {
 	c.Core.Events.Subscribe(event.OnHyperbloom, a4cb, "fischl-a4")
 	c.Core.Events.Subscribe(event.OnQuicken, a4cbNoGadget, "fischl-a4")
 	c.Core.Events.Subscribe(event.OnAggravate, a4cbNoGadget, "fischl-a4")
+}
+
+// Witchcraft bonus:
+// While Oz is on the field, if any ally causes Overload, Fischl and the active character gains 22.5% ATK.
+// If any ally causes EC or LC, Fischl and the active character gains 90 EM.
+func (c *char) witchcraftInit() {
+	if !c.witchcraft {
+		return
+	}
+	c.Core.Events.Subscribe(event.OnOverload, func(args ...any) bool {
+		// do nothing if oz not on field
+		if !c.StatusIsActive(ozActiveKey) {
+			return false
+		}
+
+		m := make([]float64, attributes.EndStatType)
+		m[attributes.ATKP] = 0.225
+		if c.StatusIsActive(witchcraftBonusCKey) {
+			m[attributes.ATKP] *= 2.0
+		}
+
+		// TODO: Does buff apply to all characters or just Fischl + active?
+		// Fischl self buff
+		c.AddStatMod(character.StatMod{
+			Base:         modifier.NewBase(witchcraftAtkKey, 10*60),
+			AffectedStat: attributes.ATKP,
+			Amount: func() ([]float64, bool) {
+				return m, true
+			},
+		})
+
+		// If Fischl is not the active char, buff them as well
+		if c.Core.Player.Active() != c.Index() {
+			c.Core.Player.ActiveChar().AddStatMod(character.StatMod{
+				Base:         modifier.NewBase(witchcraftAtkKey, 10*60),
+				AffectedStat: attributes.ATKP,
+				Amount: func() ([]float64, bool) {
+					return m, true
+				},
+			})
+		}
+
+		return false
+	}, "fischl-witchcraft-atk%")
+
+	c.Core.Events.Subscribe(event.OnElectroCharged, func(args ...any) bool {
+		// do nothing if oz not on field
+		if !c.StatusIsActive(ozActiveKey) {
+			return false
+		}
+
+		m := make([]float64, attributes.EndStatType)
+		m[attributes.EM] = 90
+		if c.StatusIsActive(witchcraftBonusCKey) {
+			m[attributes.EM] *= 2.0
+		}
+
+		// Fischl self buff
+		c.AddStatMod(character.StatMod{
+			Base:         modifier.NewBase(witchcraftEmKey, 10*60),
+			AffectedStat: attributes.EM,
+			Amount: func() ([]float64, bool) {
+				return m, true
+			},
+		})
+
+		// If Fischl is not the active char, buff them as well
+		if c.Core.Player.Active() != c.Index() {
+			c.Core.Player.ActiveChar().AddStatMod(character.StatMod{
+				Base:         modifier.NewBase(witchcraftEmKey, 10*60),
+				AffectedStat: attributes.EM,
+				Amount: func() ([]float64, bool) {
+					return m, true
+				},
+			})
+		}
+
+		return false
+	}, "fischl-witchcraft-em")
 }
