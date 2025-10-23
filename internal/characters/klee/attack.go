@@ -79,6 +79,10 @@ func add9FrameLag(frames []int) {
 	}
 }
 
+// Witchcraft bonus:
+// During Klee's Elemental Burst, her Normal Attack sequence does not reset.
+// When she performs the third Normal Attack in the sequence, an Explosive Spark
+// will be consumed to unleash Coordinated Charged Attack: Blast.
 func (c *char) Attack(p map[string]int) (action.Info, error) {
 	travel, ok := p["travel"]
 	if !ok {
@@ -119,7 +123,17 @@ func (c *char) Attack(p map[string]int) (action.Info, error) {
 		done = true
 	}
 
-	defer c.AdvanceNormalIndex()
+	// TODO: delay?
+	if c.witchcraft && c.StatusIsActive(a1SparkKey) {
+		if c.NormalCounter == 2 || c.Base.Cons == 6 && c.NormalCounter < 2 && c.Core.Rand.Float64() < 0.4 {
+			c.QueueChargedAttack(0, 10, true)
+		}
+	}
+
+	defer func() {
+		c.AdvanceNormalIndex()
+		c.savedNormalCounter = c.NormalCounter
+	}()
 
 	adjustedFrames := attackFrames
 	adjustedHitmarks := attackHitmarks

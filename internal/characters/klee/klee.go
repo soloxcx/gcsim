@@ -15,10 +15,16 @@ func init() {
 
 type char struct {
 	*tmpl.Character
-	c1Chance float64
+	a1CurrentStack          int
+	a1MaxStack              int
+	boomboosterCurrentStack int
+	boomboosterMaxStack     int
+	c1Chance                float64
+	savedNormalCounter      int
+	witchcraft              bool
 }
 
-func NewChar(s *core.Core, w *character.CharWrapper, _ info.CharacterProfile) error {
+func NewChar(s *core.Core, w *character.CharWrapper, p info.CharacterProfile) error {
 	c := char{}
 	c.Character = tmpl.NewWithWrapper(s, w)
 
@@ -26,6 +32,15 @@ func NewChar(s *core.Core, w *character.CharWrapper, _ info.CharacterProfile) er
 	c.NormalHitNum = normalHitNum
 	c.SkillCon = 3
 	c.BurstCon = 5
+
+	c.a1CurrentStack = 0
+	c.a1MaxStack = 1
+
+	witchcraft, ok := p.Params["witchcraft"]
+	if ok && witchcraft > 0 {
+		c.witchcraft = true
+		c.a1MaxStack = 3
+	}
 
 	c.SetNumCharges(action.ActionSkill, 2)
 
@@ -35,8 +50,19 @@ func NewChar(s *core.Core, w *character.CharWrapper, _ info.CharacterProfile) er
 }
 
 func (c *char) Init() error {
+	c.witchcraftInit()
 	c.onExitField()
 	return nil
+}
+
+// Witchcraft bonus:
+// During Klee's Elemental Burst, her Normal Attack sequence does not reset.
+func (c *char) ResetNormalCounter() {
+	if c.witchcraft && c.Core.Player.Active() == c.Index() && c.Core.Status.Duration(burstKey) > 0 {
+		c.NormalCounter = c.savedNormalCounter
+		return
+	}
+	c.Character.ResetNormalCounter()
 }
 
 func (c *char) ActionStam(a action.Action, p map[string]int) float64 {

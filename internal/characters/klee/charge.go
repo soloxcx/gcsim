@@ -6,14 +6,18 @@ import (
 	"github.com/genshinsim/gcsim/pkg/core/attacks"
 	"github.com/genshinsim/gcsim/pkg/core/attributes"
 	"github.com/genshinsim/gcsim/pkg/core/combat"
+	"github.com/genshinsim/gcsim/pkg/core/glog"
 	"github.com/genshinsim/gcsim/pkg/core/info"
 )
-
-var chargeFrames []int
 
 const (
 	chargeHitmark  = 76
 	chargeSnapshot = 29 + 32
+)
+
+var (
+	boomboosterMult = []float64{1.15, 1.3, 1.5}
+	chargeFrames    []int
 )
 
 func init() {
@@ -33,6 +37,27 @@ func (c *char) ChargeAttack(p map[string]int) (action.Info, error) {
 		travel = 10
 	}
 
+	windup := 0
+	switch c.Core.Player.CurrentState() {
+	case action.NormalAttackState:
+		if c.NormalCounter == 1 || c.NormalCounter == 2 {
+			windup = 14
+		}
+	case action.SkillState:
+		windup = 14
+	}
+
+	c.QueueChargedAttack(windup, travel, false)
+
+	return action.Info{
+		Frames:          func(next action.Action) int { return chargeFrames[next] - windup },
+		AnimationLength: chargeFrames[action.InvalidAction] - windup,
+		CanQueueAfter:   chargeFrames[action.ActionJump] - windup, // earliest cancel
+		State:           action.ChargeAttackState,
+	}, nil
+}
+
+func (c *char) QueueChargedAttack(windup int, travel int, coord bool) {
 	ai := info.AttackInfo{
 		ActorIndex: c.Index(),
 		Abil:       "Charge",
@@ -46,22 +71,43 @@ func (c *char) ChargeAttack(p map[string]int) (action.Info, error) {
 		Mult:       charge[c.TalentLvlAttack()],
 	}
 
-	windup := 0
-	switch c.Core.Player.CurrentState() {
-	case action.NormalAttackState:
-		if c.NormalCounter == 1 || c.NormalCounter == 2 {
-			windup = 14
-		}
-	case action.SkillState:
-		windup = 14
+	// TODO: delay?
+	if coord {
+		ai.Abil = "Coordinated Charge Attack: Blast"
+		c.Core.Log.NewEvent("coordinated CA triggered", glog.LogCharacterEvent, c.Index())
 	}
 
 	c.Core.Tasks.Add(func() {
 		// apply and clear spark
 		snap := c.Snapshot(&ai)
+		count := 0
+		if c.StatusIsActive(boomboosterNormalKey) {
+			count++
+		}
+		if c.StatusIsActive(boomboosterSkillKey) {
+			count++
+		}
+		if c.StatusIsActive(boomboosterBurstKey) {
+			count++
+		}
 		if c.StatusIsActive(a1SparkKey) {
 			snap.Stats[attributes.DmgP] += .50
-			c.DeleteStatus(a1SparkKey)
+			// C6 Witchcraft bonus:
+			// When Klee uses an Explosive Spark, there is a 50% chance it will not be consumed.
+			if c.Base.Cons < 6 || c.witchcraft && c.Core.Rand.Float64() < 0.5 {
+				c.a1CurrentStack--
+			}
+			if c.a1CurrentStack == 0 {
+				c.DeleteStatus(a1SparkKey)
+			}
+			if count > 0 {
+				ai.Mult *= boomboosterMult[count-1]
+				c.Core.Log.NewEvent("applying boombooster", glog.LogCharacterEvent, c.Index()).
+					Write("stacks", count).
+					Write("multiplier", boomboosterMult[count-1])
+			}
+			c.Core.Log.NewEvent("consuming spark", glog.LogCharacterEvent, c.Index()).
+				Write("new stacks", c.a1CurrentStack)
 		}
 
 		c.Core.QueueAttackWithSnap(
@@ -74,11 +120,4 @@ func (c *char) ChargeAttack(p map[string]int) (action.Info, error) {
 	}, chargeSnapshot-windup)
 
 	c.c1(chargeHitmark - windup + travel)
-
-	return action.Info{
-		Frames:          func(next action.Action) int { return chargeFrames[next] - windup },
-		AnimationLength: chargeFrames[action.InvalidAction] - windup,
-		CanQueueAfter:   chargeFrames[action.ActionJump] - windup, // earliest cancel
-		State:           action.ChargeAttackState,
-	}, nil
 }
