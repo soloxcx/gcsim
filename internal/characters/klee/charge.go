@@ -94,6 +94,7 @@ func (c *char) QueueChargedAttack(windup int, travel int, coord bool) {
 			snap.Stats[attributes.DmgP] += .50
 			// C6 Witchcraft bonus:
 			// When Klee uses an Explosive Spark, there is a 50% chance it will not be consumed.
+			previous := c.a1CurrentStack
 			if c.Base.Cons < 6 || c.witchcraft && c.Core.Rand.Float64() < 0.5 {
 				c.a1CurrentStack--
 			}
@@ -107,7 +108,8 @@ func (c *char) QueueChargedAttack(windup int, travel int, coord bool) {
 					Write("multiplier", boomboosterMult[count-1])
 			}
 			c.Core.Log.NewEvent("consuming spark", glog.LogCharacterEvent, c.Index()).
-				Write("new stacks", c.a1CurrentStack)
+				Write("previous", previous).
+				Write("new", c.a1CurrentStack)
 		}
 
 		c.Core.QueueAttackWithSnap(

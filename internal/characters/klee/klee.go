@@ -55,6 +55,15 @@ func (c *char) Init() error {
 	return nil
 }
 
+func (c *char) Condition(fields []string) (any, error) {
+	switch fields[0] {
+	case "spark-stacks":
+		return c.a1CurrentStack, nil
+	default:
+		return c.Character.Condition(fields)
+	}
+}
+
 // Witchcraft bonus:
 // During Klee's Elemental Burst, her Normal Attack sequence does not reset.
 func (c *char) ResetNormalCounter() {

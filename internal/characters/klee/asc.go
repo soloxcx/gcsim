@@ -43,13 +43,15 @@ func (c *char) addSpark() {
 		return
 	}
 
+	previous := c.a1CurrentStack
 	c.a1CurrentStack++
 	if c.a1CurrentStack >= c.a1MaxStack {
 		c.a1CurrentStack = c.a1MaxStack
 	}
 	c.AddStatus(a1SparkKey, 60*30, true)
 	c.Core.Log.NewEvent("adding spark stack", glog.LogCharacterEvent, c.Index()).
-		Write("current stacks", c.a1CurrentStack)
+		Write("previous", previous).
+		Write("new", c.a1CurrentStack)
 }
 
 const a4ICDKey = "klee-a4-icd"
