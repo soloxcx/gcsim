@@ -69,6 +69,11 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 		}
 	}
 
+	// TODO: Is this spark created on cast or release?
+	if c.Magic {
+		c.addSpark()
+	}
+
 	minehits, ok := p["mine"]
 	if !ok {
 		minehits = 2
@@ -145,10 +150,6 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 				mineHitmark-cooldownDelay,
 				c.makeC2CB(true),
 			)
-		}
-		// TODO: Is this spark created on cast or release?
-		if c.Magic {
-			c.addSpark()
 		}
 		c.c1(bounceHitmarks[0] - cooldownDelay)
 		c.SetCD(action.ActionSkill, 1200)
