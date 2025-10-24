@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	a4IcdKey            = "fischl-a4-icd"
-	witchcraftAtkKey    = "fischl-witchcraft-atk%"
-	witchcraftEmKey     = "fischl-witchcraft-em"
-	witchcraftBonusCKey = "fischl-witch-c6bonus"
+	a4IcdKey       = "fischl-a4-icd"
+	magicAtkKey    = "fischl-magic-atk%"
+	magicEmKey     = "fischl-magic-em"
+	magicBonusCKey = "fischl-witch-c6bonus"
 )
 
 // A1 is not implemented:
@@ -85,11 +85,11 @@ func (c *char) a4() {
 	c.Core.Events.Subscribe(event.OnAggravate, a4cbNoGadget, "fischl-a4")
 }
 
-// Witchcraft bonus:
+// Magic: Secret Rite
 // While Oz is on the field, if any ally causes Overload, Fischl and the active character gains 22.5% ATK.
 // If any ally causes EC or LC, Fischl and the active character gains 90 EM.
-func (c *char) witchcraftInit() {
-	if !c.witchcraft {
+func (c *char) magicInit() {
+	if !c.Magic {
 		return
 	}
 	c.Core.Events.Subscribe(event.OnOverload, func(args ...any) bool {
@@ -100,14 +100,14 @@ func (c *char) witchcraftInit() {
 
 		m := make([]float64, attributes.EndStatType)
 		m[attributes.ATKP] = 0.225
-		if c.StatusIsActive(witchcraftBonusCKey) {
+		if c.StatusIsActive(magicBonusCKey) {
 			m[attributes.ATKP] *= 2.0
 		}
 
 		// TODO: Does buff apply to all characters or just Fischl + active?
 		// Fischl self buff
 		c.AddStatMod(character.StatMod{
-			Base:         modifier.NewBase(witchcraftAtkKey, 10*60),
+			Base:         modifier.NewBase(magicAtkKey, 10*60),
 			AffectedStat: attributes.ATKP,
 			Amount: func() ([]float64, bool) {
 				return m, true
@@ -117,7 +117,7 @@ func (c *char) witchcraftInit() {
 		// If Fischl is not the active char, buff them as well
 		if c.Core.Player.Active() != c.Index() {
 			c.Core.Player.ActiveChar().AddStatMod(character.StatMod{
-				Base:         modifier.NewBase(witchcraftAtkKey, 10*60),
+				Base:         modifier.NewBase(magicAtkKey, 10*60),
 				AffectedStat: attributes.ATKP,
 				Amount: func() ([]float64, bool) {
 					return m, true
@@ -126,7 +126,7 @@ func (c *char) witchcraftInit() {
 		}
 
 		return false
-	}, "fischl-witchcraft-atk%")
+	}, "fischl-magic-atk%")
 
 	c.Core.Events.Subscribe(event.OnElectroCharged, func(args ...any) bool {
 		// do nothing if oz not on field
@@ -136,13 +136,13 @@ func (c *char) witchcraftInit() {
 
 		m := make([]float64, attributes.EndStatType)
 		m[attributes.EM] = 90
-		if c.StatusIsActive(witchcraftBonusCKey) {
+		if c.StatusIsActive(magicBonusCKey) {
 			m[attributes.EM] *= 2.0
 		}
 
 		// Fischl self buff
 		c.AddStatMod(character.StatMod{
-			Base:         modifier.NewBase(witchcraftEmKey, 10*60),
+			Base:         modifier.NewBase(magicEmKey, 10*60),
 			AffectedStat: attributes.EM,
 			Amount: func() ([]float64, bool) {
 				return m, true
@@ -152,7 +152,7 @@ func (c *char) witchcraftInit() {
 		// If Fischl is not the active char, buff them as well
 		if c.Core.Player.Active() != c.Index() {
 			c.Core.Player.ActiveChar().AddStatMod(character.StatMod{
-				Base:         modifier.NewBase(witchcraftEmKey, 10*60),
+				Base:         modifier.NewBase(magicEmKey, 10*60),
 				AffectedStat: attributes.EM,
 				Amount: func() ([]float64, bool) {
 					return m, true
@@ -161,5 +161,5 @@ func (c *char) witchcraftInit() {
 		}
 
 		return false
-	}, "fischl-witchcraft-em")
+	}, "fischl-magic-em")
 }

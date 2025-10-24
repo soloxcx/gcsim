@@ -77,10 +77,10 @@ func (c *char) Burst(p map[string]int) (action.Info, error) {
 		}, start)
 	}
 
-	// Witchcraft bonus:
+	// magic bonus:
 	// When the duration of Sparks 'n' Splash ends, or if Klee leaves the field early, an explosion will be triggered,
 	// dealing 555% of her ATK as AoE Pyro DMG. If Klee is active when the explosion occurs, its DMG will be increased by 100%.
-	if c.Base.Cons >= 4 && c.witchcraft {
+	if c.Base.Cons >= 4 && c.Magic {
 		c.Core.Tasks.Add(func() {
 			// check to make sure it hasn't already exploded due to exiting field
 			if c.Core.Player.Active() == c.Index() {
@@ -117,8 +117,8 @@ func (c *char) Burst(p map[string]int) (action.Info, error) {
 				AffectedStat: attributes.PyroP,
 				Amount: func() ([]float64, bool) {
 					m[attributes.PyroP] = .1
-					// Witchcraft bonus: self buff is 50% pyro
-					if c.Core.Player.Active() == c.Index() && c.witchcraft {
+					// Magic: Secret Rite- self buff is 50% pyro
+					if c.Core.Player.Active() == c.Index() && c.Magic {
 						m[attributes.PyroP] = .5
 					}
 					return m, true

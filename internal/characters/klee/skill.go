@@ -147,7 +147,7 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 			)
 		}
 		// TODO: Is this spark created on cast or release?
-		if c.witchcraft {
+		if c.Magic {
 			c.addSpark()
 		}
 		c.c1(bounceHitmarks[0] - cooldownDelay)

@@ -18,7 +18,7 @@ const (
 // When Jumpy Dumpty and Normal Attacks deal DMG, Klee has a 50% chance to obtain an Explosive Spark.
 // This Explosive Spark is consumed by the next Charged Attack, which costs no Stamina and deals 50% increased DMG.
 
-// Witchcraft Bonus:
+// Buffed State:
 // Using her Elemental Skill or Elemental Burst grants an additional Explosive Spark. Max 3 Explosive Sparks.
 // This Explosive Spark is consumed by the next Charged Attack, which costs no Stamina and deals 50% increased DMG.
 func (c *char) makeA1CB() info.AttackCBFunc {
@@ -32,7 +32,7 @@ func (c *char) makeA1CB() info.AttackCBFunc {
 		if c.Core.Rand.Float64() < 0.5 {
 			return
 		}
-		// TODO: Witchcraft icd?
+		// TODO: magic icd?
 		c.AddStatus(a1IcdKey, 60*4, true)
 		c.addSpark()
 	}
@@ -78,11 +78,12 @@ func (c *char) makeA4CB() info.AttackCBFunc {
 	}
 }
 
+// Magic: Secret Rite
 // Each time Klee deals DMG with her Elemental Skill, Elemental Burst, or Normal Attack, she gains a stack of Boom Booster.
 // Each stack lasts for 20s and has its own independent timer. While Klee has 1/2/3 stacks, her Explosive Spark-enhanced
 // Charged Attacks deal 115%/130%/150% of their original DMG.
-func (c *char) witchcraftInit() {
-	if !c.witchcraft {
+func (c *char) magicInit() {
+	if !c.Magic {
 		return
 	}
 	c.Core.Events.Subscribe(event.OnEnemyHit, func(args ...any) bool {

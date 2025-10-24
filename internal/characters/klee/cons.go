@@ -44,9 +44,9 @@ func (c *char) c1(delay int) {
 	c.Core.QueueAttack(ai, combat.NewCircleHitOnTarget(c.Core.Combat.PrimaryTarget(), nil, 1.5), 0, delay)
 	c.Core.Log.NewEvent("c1 triggered", glog.LogCharacterEvent, c.Index())
 
-	// Witchcraft bonus:
+	// magic bonus:
 	// Additionally, bombarding opponents with sparks increases Klee's ATK by 60% for 12s.
-	if !c.witchcraft {
+	if !c.Magic {
 		return
 	}
 
@@ -67,9 +67,9 @@ func (c *char) makeC2CB(mine bool) info.AttackCBFunc {
 		if c.Base.Cons < 2 {
 			return
 		}
-		// Witchcraft bonus:
+		// magic bonus:
 		// Dealing DMG to opponents with Klee's Elemental Skill decreases their DEF by 23% for 10s.
-		if !mine && !c.witchcraft {
+		if !mine && !c.Magic {
 			return
 		}
 		e, ok := a.Target.(*enemy.Enemy)

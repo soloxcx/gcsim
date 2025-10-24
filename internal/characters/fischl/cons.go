@@ -34,7 +34,7 @@ func (c *char) c6Wave() {
 		c.ozTravel,
 	)
 
-	if c.witchcraft {
-		c.AddStatus(witchcraftBonusCKey, 10*60, true)
+	if c.Magic {
+		c.AddStatus(magicBonusCKey, 10*60, true)
 	}
 }

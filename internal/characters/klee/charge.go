@@ -92,10 +92,10 @@ func (c *char) QueueChargedAttack(windup int, travel int, coord bool) {
 		}
 		if c.StatusIsActive(a1SparkKey) {
 			snap.Stats[attributes.DmgP] += .50
-			// C6 Witchcraft bonus:
+			// C6 magic bonus:
 			// When Klee uses an Explosive Spark, there is a 50% chance it will not be consumed.
 			previous := c.a1CurrentStack
-			if c.Base.Cons < 6 || c.witchcraft && c.Core.Rand.Float64() < 0.5 {
+			if c.Base.Cons < 6 || c.Magic && c.Core.Rand.Float64() < 0.5 {
 				c.a1CurrentStack--
 			}
 			if c.a1CurrentStack == 0 {

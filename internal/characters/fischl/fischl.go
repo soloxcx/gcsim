@@ -25,7 +25,6 @@ type char struct {
 	ozTravel        int
 	burstOzSpawnSrc int // prevent double oz spawn from burst
 	c6Watcher       *minazuki.Watcher
-	witchcraft      bool
 }
 
 func NewChar(s *core.Core, w *character.CharWrapper, p info.CharacterProfile) error {
@@ -47,9 +46,9 @@ func NewChar(s *core.Core, w *character.CharWrapper, p info.CharacterProfile) er
 		c.ozTravel = travel
 	}
 
-	witchcraft, ok := p.Params["witchcraft"]
-	if ok && witchcraft > 0 {
-		c.witchcraft = true
+	magic, ok := p.Params["magic"]
+	if ok && magic > 0 {
+		c.Magic = true
 	}
 
 	w.Character = &c
@@ -59,7 +58,7 @@ func NewChar(s *core.Core, w *character.CharWrapper, p info.CharacterProfile) er
 
 func (c *char) Init() error {
 	c.a4()
-	c.witchcraftInit()
+	c.magicInit()
 
 	if c.Base.Cons >= 6 {
 		w, err := minazuki.New(

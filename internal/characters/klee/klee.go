@@ -21,7 +21,6 @@ type char struct {
 	boomboosterMaxStack     int
 	c1Chance                float64
 	savedNormalCounter      int
-	witchcraft              bool
 }
 
 func NewChar(s *core.Core, w *character.CharWrapper, p info.CharacterProfile) error {
@@ -36,9 +35,9 @@ func NewChar(s *core.Core, w *character.CharWrapper, p info.CharacterProfile) er
 	c.a1CurrentStack = 0
 	c.a1MaxStack = 1
 
-	witchcraft, ok := p.Params["witchcraft"]
-	if ok && witchcraft > 0 {
-		c.witchcraft = true
+	magic, ok := p.Params["magic"]
+	if ok && magic > 0 {
+		c.Magic = true
 		c.a1MaxStack = 3
 	}
 
@@ -50,8 +49,8 @@ func NewChar(s *core.Core, w *character.CharWrapper, p info.CharacterProfile) er
 }
 
 func (c *char) Init() error {
-	c.witchcraftInit()
 	c.onExitField()
+	c.magicInit()
 	return nil
 }
 
@@ -64,10 +63,10 @@ func (c *char) Condition(fields []string) (any, error) {
 	}
 }
 
-// Witchcraft bonus:
+// Magic: Secret Rite
 // During Klee's Elemental Burst, her Normal Attack sequence does not reset.
 func (c *char) ResetNormalCounter() {
-	if c.witchcraft && c.Core.Player.Active() == c.Index() && c.Core.Status.Duration(burstKey) > 0 {
+	if c.Magic && c.Core.Player.Active() == c.Index() && c.Core.Status.Duration(burstKey) > 0 {
 		c.NormalCounter = c.savedNormalCounter
 		return
 	}
