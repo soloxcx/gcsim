@@ -9,6 +9,7 @@ import (
 	"github.com/genshinsim/gcsim/pkg/core/attacks"
 	"github.com/genshinsim/gcsim/pkg/core/attributes"
 	"github.com/genshinsim/gcsim/pkg/core/combat"
+	"github.com/genshinsim/gcsim/pkg/core/glog"
 	"github.com/genshinsim/gcsim/pkg/core/info"
 )
 
@@ -119,7 +120,19 @@ func (c *char) Attack(p map[string]int) (action.Info, error) {
 		done = true
 	}
 
-	defer c.AdvanceNormalIndex()
+	// Queue coordinated CA immediately on cast.
+	// Because there is no delay, it is possible to queue a coordinated CA during a manually
+	// casted Boom-Boom Strike before the spark is actually consumed.
+	if c.IsHexerei && c.Core.Player.GetHexereiCount() > 1 && c.StatusIsActive(a1SparkKey) {
+		if c.NormalCounter == 2 || c.Base.Cons == 6 && c.NormalCounter < 2 && c.Core.Rand.Float64() < 0.4 {
+			c.queueCoordinatedCharge()
+		}
+	}
+
+	defer func() {
+		c.AdvanceNormalIndex()
+		c.savedNormalCounter = c.NormalCounter
+	}()
 
 	adjustedFrames := attackFrames
 	adjustedHitmarks := attackHitmarks
@@ -154,4 +167,30 @@ func (c *char) Attack(p map[string]int) (action.Info, error) {
 	}
 	actionInfo.QueueAction(tryPerformAttack, adjustedHitmarks[c.NormalCounter])
 	return actionInfo, nil
+}
+
+// Hexerei: Secret Rite
+// When she performs the third Normal Attack in the sequence, an Explosive Spark
+// will be consumed to unleash an additional attack equivalent to Boom-Boom Strike.
+func (c *char) queueCoordinatedCharge() {
+	delay := 30
+	travel := 10
+
+	c.Core.Tasks.Add(func() {
+		ai := c.getChargeAttackInfo()
+		snap := c.applySpark(&ai)
+		ai.Abil += " (Coordinated)"
+		c.Core.QueueAttackWithSnap(
+			ai,
+			snap,
+			combat.NewCircleHit(c.Core.Combat.Player(), c.Core.Combat.PrimaryTarget(), nil, 3),
+			travel,
+			c.makeA4CB(),
+		)
+	}, delay)
+
+	c.Core.Log.NewEvent("coordinated CA triggered", glog.LogCharacterEvent, c.Index()).
+		Write("expected hitmark", c.Core.F+delay+travel)
+
+	c.c1(delay - travel)
 }
