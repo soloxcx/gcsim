@@ -73,21 +73,33 @@ func (c *char) applySpark(ai *info.AttackInfo) info.Snapshot {
 	if c.StatusIsActive(a1SparkKey) {
 		ai.Abil = "Boom-Boom Strike"
 		snap.Stats[attributes.DmgP] += .50
-		// Hexerei: Secret Rite (C6):
-		// When Klee uses an Explosive Spark, there is a 50% chance it will not be consumed.
-		previous := c.a1CurrentStack
-		if c.Base.Cons < 6 || c.IsHexerei && c.Core.Player.GetHexereiCount() > 1 && c.Core.Rand.Float64() < 0.5 {
-			c.a1CurrentStack--
-		}
-		c.Core.Log.NewEvent("consuming spark", glog.LogCharacterEvent, c.Index()).
-			Write("previous spark stacks", previous).
-			Write("new spark stacks", c.a1CurrentStack).
+		c.Core.Log.NewEvent("applying spark snapshot", glog.LogCharacterEvent, c.Index()).
 			Write("boombadge mult", c.getBoomBadgeMult())
-		if c.a1CurrentStack == 0 {
-			c.DeleteStatus(a1SparkKey)
-		}
+		// Sparks counter is decremented separately from snapshot
+		// TODO: frames
+		c.Core.Tasks.Add(func() {
+			c.consumeSpark()
+		}, 15)
 	}
 	return snap
+}
+
+// Hexerei: Secret Rite (C6):
+// When Klee uses an Explosive Spark, there is a 50% chance it will not be consumed.
+func (c *char) consumeSpark() {
+	if c.a1CurrentStack == 0 {
+		return
+	}
+	previous := c.a1CurrentStack
+	if c.Base.Cons < 6 || c.IsHexerei && c.Core.Player.GetHexereiCount() > 1 && c.Core.Rand.Float64() < 0.5 {
+		c.a1CurrentStack--
+	}
+	if c.a1CurrentStack == 0 {
+		c.DeleteStatus(a1SparkKey)
+	}
+	c.Core.Log.NewEvent("consuming spark", glog.LogCharacterEvent, c.Index()).
+		Write("previous spark stacks", previous).
+		Write("new spark stacks", c.a1CurrentStack)
 }
 
 func (c *char) getBoomBadgeStacks() int {

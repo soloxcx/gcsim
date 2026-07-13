@@ -120,14 +120,8 @@ func (c *char) Attack(p map[string]int) (action.Info, error) {
 		done = true
 	}
 
-	// Queue coordinated CA immediately on cast.
-	// Because there is no delay, it is possible to queue a coordinated CA during a manually
-	// casted Boom-Boom Strike before the spark is actually consumed.
-	if c.IsHexerei && c.Core.Player.GetHexereiCount() > 1 && c.StatusIsActive(a1SparkKey) {
-		if c.NormalCounter == 2 || c.Base.Cons == 6 && c.NormalCounter < 2 && c.Core.Rand.Float64() < 0.4 {
-			c.queueCoordinatedCharge()
-		}
-	}
+	// Coordinated CA can be triggered immediately on cast
+	c.checkCoordinatedCharge()
 
 	defer func() {
 		c.AdvanceNormalIndex()
@@ -172,9 +166,27 @@ func (c *char) Attack(p map[string]int) (action.Info, error) {
 // Hexerei: Secret Rite
 // When she performs the third Normal Attack in the sequence, an Explosive Spark
 // will be consumed to unleash an additional attack equivalent to Boom-Boom Strike.
-func (c *char) queueCoordinatedCharge() {
-	delay := 30
-	travel := 10
+// If C6, while Q is active, all normal attacks have a 40% chance to fire a coordinated CA.
+func (c *char) checkCoordinatedCharge() {
+	if !c.IsHexerei {
+		return
+	}
+
+	if c.Core.Player.GetHexereiCount() < 2 {
+		return
+	}
+
+	if !c.StatusIsActive(a1SparkKey) {
+		return
+	}
+
+	if c.NormalCounter != 2 && (c.Base.Cons != 6 || !c.StatusIsActive(burstKey) || c.NormalCounter >= 2 || c.Core.Rand.Float64() >= 0.4) {
+		return
+	}
+
+	// TODO: frames
+	delay := 15
+	travel := 25
 
 	c.Core.Tasks.Add(func() {
 		ai := c.getChargeAttackInfo()

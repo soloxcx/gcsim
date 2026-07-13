@@ -1,6 +1,7 @@
 package klee
 
 import (
+	"github.com/genshinsim/gcsim/pkg/core/action"
 	"github.com/genshinsim/gcsim/pkg/core/attacks"
 	"github.com/genshinsim/gcsim/pkg/core/event"
 	"github.com/genshinsim/gcsim/pkg/core/glog"
@@ -48,7 +49,6 @@ func (c *char) addSpark() {
 
 	previous := c.a1CurrentStack
 	c.a1CurrentStack++
-	// TODO: Does status refresh at max stacks?
 	if c.a1CurrentStack > c.a1MaxStack {
 		c.a1CurrentStack = c.a1MaxStack
 		return
@@ -57,6 +57,11 @@ func (c *char) addSpark() {
 	c.Core.Log.NewEvent("adding spark stack", glog.LogCharacterEvent, c.Index()).
 		Write("previous", previous).
 		Write("new", c.a1CurrentStack)
+
+	// If Klee is still in the normal state, it is possible for a spark to be consumed as it is generated.
+	if c.Core.Player.CurrentState() == action.NormalAttackState {
+		c.checkCoordinatedCharge()
+	}
 }
 
 const a4ICDKey = "klee-a4-icd"
