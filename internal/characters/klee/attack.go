@@ -180,7 +180,7 @@ func (c *char) checkCoordinatedCharge() {
 		return
 	}
 
-	if c.NormalCounter != 2 && (c.Base.Cons != 6 || !c.StatusIsActive(burstKey) || c.NormalCounter >= 2 || c.Core.Rand.Float64() >= 0.4) {
+	if c.NormalCounter != 2 && (c.Base.Cons != 6 || c.Core.Status.Duration(burstKey) <= 0 || c.Core.Rand.Float64() >= 0.4) {
 		return
 	}
 
@@ -204,5 +204,5 @@ func (c *char) checkCoordinatedCharge() {
 	c.Core.Log.NewEvent("coordinated CA triggered", glog.LogCharacterEvent, c.Index()).
 		Write("expected hitmark", c.Core.F+delay+travel)
 
-	c.c1(delay - travel)
+	c.c1(delay - 1)
 }
