@@ -118,7 +118,7 @@ func (c *char) Burst(p map[string]int) (action.Info, error) {
 				Amount: func() []float64 {
 					m[attributes.PyroP] = .1
 					// Hexerei: Secret Rite- self buff is 50% pyro
-					if c.Core.Player.Active() == x.Index() && c.IsHexerei && c.Core.Player.GetHexereiCount() > 1 {
+					if x.Index() == c.Index() && c.IsHexerei && c.Core.Player.GetHexereiCount() > 1 {
 						m[attributes.PyroP] = .5
 					}
 					return m
