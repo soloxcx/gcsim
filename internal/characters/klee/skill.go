@@ -43,7 +43,7 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 
 	bounce, ok := p["bounce"]
 	if !ok {
-		bounce = 1
+		bounce = 3
 	}
 	bounceAttacks := make([]attackData, bounce)
 	for i := range bounceAttacks {
@@ -71,7 +71,7 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 
 	minehits, ok := p["mine"]
 	if !ok {
-		minehits = 2
+		minehits = 8
 	}
 	mineHitmark, ok := p["mine_delay"]
 	if !ok {
@@ -146,6 +146,7 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 				c.makeC2CB(true),
 			)
 		}
+		// TODO: bounce and mines need to snapshot at cooldown delay and c1 activates just before it
 		c.c1(bounceHitmarks[0] - cooldownDelay)
 		c.SetCD(action.ActionSkill, 1200)
 	}, cooldownDelay)
