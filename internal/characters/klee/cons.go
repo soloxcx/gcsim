@@ -25,6 +25,8 @@ func (c *char) c1(delay int) {
 	}
 	c.c1Chance = 0.1
 
+	travel := 10
+
 	ai := info.AttackInfo{
 		ActorIndex:         c.Index(),
 		Abil:               "Sparks'n'Splash (C1)",
@@ -39,7 +41,7 @@ func (c *char) c1(delay int) {
 		IsDeployable:       true,
 	}
 	// TODO: should center on target hit by attack that triggered c1
-	c.Core.QueueAttack(ai, combat.NewCircleHitOnTarget(c.Core.Combat.PrimaryTarget(), nil, 1.5), 0, delay)
+	c.Core.QueueAttack(ai, combat.NewCircleHitOnTarget(c.Core.Combat.PrimaryTarget(), nil, 1.5), 0, delay+travel)
 	c.Core.Log.NewEvent("c1 triggered", glog.LogCharacterEvent, c.Index())
 
 	// Buffed State:
