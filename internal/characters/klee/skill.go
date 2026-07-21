@@ -19,6 +19,10 @@ var (
 
 var bounceHitmarks = []int{71, 111, 140}
 
+const (
+	cooldownDelay = 27
+)
+
 func init() {
 	skillFrames = frames.InitAbilSlice(75)
 	skillFrames[action.ActionAttack] = 66
@@ -120,7 +124,6 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 		CanQueueAfter:   canQueueAfter,
 		State:           action.SkillState,
 	}
-	cooldownDelay := 33
 	actionInfo.QueueAction(func() {
 		if release == 0 {
 			c.Core.Log.NewEvent("attempted klee skill cancel without burst", glog.LogWarnings, -1)
