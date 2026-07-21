@@ -40,16 +40,11 @@ func init() {
 // Has two parameters, "bounce" determines the number of bounces that hit
 // "mine" determines the number of mines that hit the enemy
 func (c *char) Skill(p map[string]int) (action.Info, error) {
-	type attackData struct {
-		ai   info.AttackInfo
-		snap info.Snapshot
-	}
-
 	bounce, ok := p["bounce"]
 	if !ok {
 		bounce = 3
 	}
-	bounceAttacks := make([]attackData, bounce)
+	bounceAttacks := make([]info.AttackInfo, bounce)
 	for i := range bounceAttacks {
 		ai := info.AttackInfo{
 			ActorIndex: c.Index(),
@@ -67,10 +62,7 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 		if i == 2 {
 			ai.Durability = 50
 		}
-		bounceAttacks[i] = attackData{
-			ai:   ai,
-			snap: c.Snapshot(&ai),
-		}
+		bounceAttacks[i] = ai
 	}
 
 	minehits, ok := p["mine"]
@@ -81,7 +73,7 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 	if !ok {
 		mineHitmark = 240
 	}
-	mineAttacks := make([]attackData, minehits)
+	mineAttacks := make([]info.AttackInfo, minehits)
 	mineAi := info.AttackInfo{
 		ActorIndex:         c.Index(),
 		Abil:               "Jumpy Dumpty (Mine)",
@@ -96,10 +88,7 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 		IsDeployable:       true,
 	}
 	for i := range mineAttacks {
-		mineAttacks[i] = attackData{
-			ai:   mineAi,
-			snap: c.Snapshot(&mineAi),
-		}
+		mineAttacks[i] = mineAi
 	}
 
 	release, ok := p["release"]
@@ -128,12 +117,16 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 		if release == 0 {
 			c.Core.Log.NewEvent("attempted klee skill cancel without burst", glog.LogWarnings, -1)
 		}
+
+		// C1 only activates if E successfully releases, and snapshots into E
+		c.c1(0)
 		particleCB := c.makeParticleCB()
+
 		for i := range bounceAttacks {
-			c.Core.QueueAttackWithSnap(
-				bounceAttacks[i].ai,
-				bounceAttacks[i].snap,
+			c.Core.QueueAttack(
+				bounceAttacks[i],
 				combat.NewCircleHit(c.Core.Combat.Player(), c.Core.Combat.PrimaryTarget(), nil, 4),
+				0,
 				bounceHitmarks[i]-cooldownDelay,
 				c.makeA1CB(),
 				particleCB,
@@ -141,16 +134,14 @@ func (c *char) Skill(p map[string]int) (action.Info, error) {
 			)
 		}
 		for i := range mineAttacks {
-			c.Core.QueueAttackWithSnap(
-				mineAttacks[i].ai,
-				mineAttacks[i].snap,
+			c.Core.QueueAttack(
+				mineAttacks[i],
 				combat.NewCircleHit(c.Core.Combat.Player(), c.Core.Combat.PrimaryTarget(), nil, 2),
+				0,
 				mineHitmark-cooldownDelay,
 				c.makeC2CB(true),
 			)
 		}
-		// TODO: bounce and mines need to snapshot at cooldown delay and c1 activates just before it
-		c.c1(bounceHitmarks[0] - cooldownDelay)
 		c.SetCD(action.ActionSkill, 1200)
 	}, cooldownDelay)
 
